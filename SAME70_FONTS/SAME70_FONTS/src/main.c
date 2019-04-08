@@ -38,10 +38,10 @@ volatile float totalDist = 0;
 
 //RTC
 
-#define YEAR        2019
-#define MOUNTH      4
-#define DAY         7
-#define WEEK        1
+#define YEAR        2018
+#define MONTH      3
+#define DAY         19
+#define WEEK        12
 #define HOUR        0
 #define MINUTE      0
 #define SECOND      0
@@ -68,7 +68,7 @@ void RTC_Handler(void)
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
 			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
 			
-			rtc_set_date(RTC, YEAR, MOUNTH, DAY, WEEK);
+			rtc_set_date(RTC, YEAR, MONTH, DAY, WEEK);
 			rtc_set_time(RTC, HOUR, MINUTE, SECOND);
 			
 			
@@ -89,7 +89,7 @@ void RTC_init(){
 	rtc_set_hour_mode(RTC, 0);
 
 	/* Configura data e hora manualmente */
-	rtc_set_date(RTC, YEAR, MOUNTH, DAY, WEEK);
+	rtc_set_date(RTC, YEAR, MONTH, DAY, WEEK);
 	rtc_set_time(RTC, HOUR, MINUTE, SECOND);
 
 	/* Configure RTC interrupts */
@@ -241,13 +241,13 @@ void font_draw_text(tFont *font, const char *text, int x, int y, int spacing) {
 
 float atualizaDist(int pulses){
 	//totalDist = totalDist + (2*PI*pulses)/dt;
-	totalDist = totalDist +( 2*PI*RAD*pulses);
+	totalDist = totalDist + ( 2*PI*RAD*pulses);
 	return totalDist;
 }
 
 float calculaVel(int pulses){
 	//totalDist = totalDist + (2*PI*pulses)/dt;
-	float vel = 2*PI*pulses/DT;
+	float vel = (3.6*2*PI*pulses)/DT;
 	return vel;
 }
 
@@ -255,12 +255,10 @@ int main(void) {
 	board_init();
 	sysclk_init();	
 	configure_lcd();
-	TC_init(TC_CH, TC_ID, 1, 8);
+	TC_init(TC_CH, ID_TC0, 0, 8);
 	BUT_init();
 	RTC_init();
-	
-	sysclk_init();
-	
+		
 	char buf[20];
 	f_rtt_alarme = true;
 	uint16_t pllPreScale = (int) (((float) 32768) / 2.0);
@@ -279,7 +277,7 @@ int main(void) {
 		
 	if (f_rtt_alarme){
 		
-	  sprintf(buf, "%.3f m/s",calculaVel(totalPulses));
+	  sprintf(buf, "%.3f km/h",calculaVel(totalPulses));
 	 /* ili9488_draw_filled_rectangle(0, 50, ILI9488_LCD_WIDTH-1, 10);*/
       font_draw_text(&calibri_36, buf, 50, 50, 1);
 	  
@@ -291,7 +289,7 @@ int main(void) {
 	  
       f_rtt_alarme = false;
 	  
-totalPulses = 0;
+	totalPulses = 0;
 	  
     }
 	if(tc_alarm){
@@ -300,11 +298,11 @@ totalPulses = 0;
 		uint32_t second;
 		rtc_get_time(RTC,&hour,&minute,&second );
 		 sprintf(buf, "%d:%d:%d",hour,minute,second);
-		font_draw_text(&calibri_36, buf, 20, 180, 1);
+		font_draw_text(&calibri_36, buf, 50, 200, 1);
 		tc_alarm = false;
 	}
 	
-	
+	pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 		
 	}
 }

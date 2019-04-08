@@ -167,8 +167,9 @@ src/main.d src/main.o: ../src/main.c ../src/asf.h \
  ../src/ASF/sam/boards/same70_xplained/led.h \
  ../src/ASF/common/services/spi/sam_spi/spi_master.h \
  ../src/ASF/sam/drivers/spi/spi.h ../src/config/conf_spi_master.h \
- ../src/ASF/sam/drivers/pio/pio_handler.h ../src/tfont.h \
- ../src/sourcecodepro_28.h ../src/calibri_36.h ../src/arial_72.h
+ ../src/ASF/sam/drivers/tc/tc.h ../src/ASF/sam/drivers/pio/pio_handler.h \
+ ../src/tfont.h ../src/sourcecodepro_28.h ../src/calibri_36.h \
+ ../src/arial_72.h
 
 ../src/asf.h:
 
@@ -519,6 +520,8 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 ../src/ASF/sam/drivers/spi/spi.h:
 
 ../src/config/conf_spi_master.h:
+
+../src/ASF/sam/drivers/tc/tc.h:
 
 ../src/ASF/sam/drivers/pio/pio_handler.h:
 
