@@ -13,6 +13,7 @@
 
 #define PI 3.14
 #define RAD 0.650
+#define DT 4
 struct ili9488_opt_t g_ili9488_display_opt;
 
 
@@ -45,6 +46,10 @@ volatile float totalDist = 0;
 #define MINUTE      0
 #define SECOND      0
 
+//TC
+
+#define TC_CH TC0
+#define TC_ID ID_TC1
 
 void RTC_Handler(void)
 {
@@ -160,6 +165,51 @@ static void RTT_init(uint16_t pllPreScale, uint32_t IrqNPulses)
 }
 
 
+void TC0_Handler(void){
+	volatile uint32_t ul_dummy;
+
+	/****************************************************************
+	* Devemos indicar ao TC que a interrup??o foi satisfeita.
+	******************************************************************/
+	ul_dummy = tc_get_status(TC0, 0);
+
+	/* Avoid compiler warning */
+	UNUSED(ul_dummy);
+
+	tc_alarm = true;
+}
+
+
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
+	uint32_t ul_div;
+	uint32_t ul_tcclks;
+	uint32_t ul_sysclk = sysclk_get_cpu_hz();
+
+	uint32_t channel = 1;
+
+	/* Configura o PMC */
+	/* O TimerCounter ? meio confuso
+	o uC possui 3 TCs, cada TC possui 3 canais
+	TC0 : ID_TC0, ID_TC1, ID_TC2
+	TC1 : ID_TC3, ID_TC4, ID_TC5
+	TC2 : ID_TC6, ID_TC7, ID_TC8
+	*/
+	pmc_enable_periph_clk(ID_TC);
+
+	/** Configura o TC para operar em  4Mhz e interrup?c?o no RC compare */
+	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
+	tc_init(TC, TC_CHANNEL, ul_tcclks | TC_CMR_CPCTRG);
+	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
+
+	/* Configura e ativa interrup?c?o no TC canal 0 */
+	/* Interrup??o no C */
+	NVIC_EnableIRQ((IRQn_Type) ID_TC);
+	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
+
+	/* Inicializa o canal 0 do TC */
+	tc_start(TC, TC_CHANNEL);
+}
+
 void configure_lcd(void){
 	/* Initialize display parameter */
 	g_ili9488_display_opt.ul_width = ILI9488_LCD_WIDTH;
@@ -195,42 +245,53 @@ float atualizaDist(int pulses){
 	return totalDist;
 }
 
+float calculaVel(int pulses){
+	//totalDist = totalDist + (2*PI*pulses)/dt;
+	float vel = 2*PI*pulses/DT;
+	return vel;
+}
+
 int main(void) {
 	board_init();
 	sysclk_init();	
 	configure_lcd();
+	TC_init(TC_CH, TC_ID, 1, 8);
 	BUT_init();
 	RTC_init();
 	
 	sysclk_init();
 	
 	char buf[20];
-	f_rtt_alarme = false;
+	f_rtt_alarme = true;
 	uint16_t pllPreScale = (int) (((float) 32768) / 2.0);
 	uint32_t irqRTTvalue  = 8;
 	 
-	RTT_init(pllPreScale, irqRTTvalue);
 	//font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
 	//font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
 	font_draw_text(&calibri_36, "Speed", 20, 10, 1);
 	font_draw_text(&calibri_36, "Total Distance", 20, 80, 1);
 	font_draw_text(&calibri_36, "Total Time", 20, 160, 1);
-	font_draw_text(&calibri_36, buf, 20, 40, 1);
 	//font_draw_text(&arial_72, "102456", 50, 200, 2);
-	
+	tc_alarm = false;
+	totalDist = 0;
+	totalPulses = 0;
 	while(1) {
 		
 	if (f_rtt_alarme){
 		
-	  sprintf(buf, "%d",totalPulses - previousPulses);
+	  sprintf(buf, "%.3f m/s",calculaVel(totalPulses));
+	 /* ili9488_draw_filled_rectangle(0, 50, ILI9488_LCD_WIDTH-1, 10);*/
       font_draw_text(&calibri_36, buf, 50, 50, 1);
 	  
-	  sprintf(buf, "%d m",atualizaDist(totalPulses - previousPulses));
+	  sprintf(buf, "%.3f m",atualizaDist(totalPulses));
+	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
 	  font_draw_text(&calibri_36, buf, 50, 120, 1);
  
       RTT_init(pllPreScale, irqRTTvalue);         
-	  previousPulses = totalPulses;
+	  
       f_rtt_alarme = false;
+	  
+totalPulses = 0;
 	  
     }
 	if(tc_alarm){
