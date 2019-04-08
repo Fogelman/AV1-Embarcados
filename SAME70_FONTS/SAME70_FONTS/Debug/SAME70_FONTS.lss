@@ -2711,12 +2711,12 @@ int main(void) {
   40114e:	47a0      	blx	r4
 		}
 	 /* ili9488_draw_filled_rectangle(0, 50, ILI9488_LCD_WIDTH-1, 10);*/
-      font_draw_text(&calibri_36, buf, 50, 50, 1);
+      font_draw_text(&calibri_36, buf, 30, 50, 1);
   401150:	4639      	mov	r1, r7
   401152:	2301      	movs	r3, #1
   401154:	9300      	str	r3, [sp, #0]
   401156:	2332      	movs	r3, #50	; 0x32
-  401158:	2232      	movs	r2, #50	; 0x32
+  401158:	221e      	movs	r2, #30
   40115a:	4850      	ldr	r0, [pc, #320]	; (40129c <main+0x294>)
   40115c:	4c50      	ldr	r4, [pc, #320]	; (4012a0 <main+0x298>)
   40115e:	47a0      	blx	r4
@@ -2740,12 +2740,12 @@ int main(void) {
   40117e:	4c54      	ldr	r4, [pc, #336]	; (4012d0 <main+0x2c8>)
   401180:	47a0      	blx	r4
 	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
-	  font_draw_text(&calibri_36, buf, 50, 120, 1);
+	  font_draw_text(&calibri_36, buf, 30, 120, 1);
   401182:	4639      	mov	r1, r7
   401184:	2301      	movs	r3, #1
   401186:	9300      	str	r3, [sp, #0]
   401188:	2378      	movs	r3, #120	; 0x78
-  40118a:	2232      	movs	r2, #50	; 0x32
+  40118a:	221e      	movs	r2, #30
   40118c:	4843      	ldr	r0, [pc, #268]	; (40129c <main+0x294>)
   40118e:	4c44      	ldr	r4, [pc, #272]	; (4012a0 <main+0x298>)
   401190:	47a0      	blx	r4
@@ -2763,12 +2763,12 @@ int main(void) {
   4011a4:	4c4a      	ldr	r4, [pc, #296]	; (4012d0 <main+0x2c8>)
   4011a6:	47a0      	blx	r4
 	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
-	  font_draw_text(&calibri_36, buf, 50, 280, 1);
+	  font_draw_text(&calibri_36, buf, 30, 280, 1);
   4011a8:	4639      	mov	r1, r7
   4011aa:	2301      	movs	r3, #1
   4011ac:	9300      	str	r3, [sp, #0]
   4011ae:	f44f 738c 	mov.w	r3, #280	; 0x118
-  4011b2:	2232      	movs	r2, #50	; 0x32
+  4011b2:	221e      	movs	r2, #30
   4011b4:	4839      	ldr	r0, [pc, #228]	; (40129c <main+0x294>)
   4011b6:	4c3a      	ldr	r4, [pc, #232]	; (4012a0 <main+0x298>)
   4011b8:	47a0      	blx	r4

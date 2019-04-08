@@ -360,15 +360,15 @@ int main(void) {
 			sprintf(buf, "%.3f km/h    ",vel);
 		}
 	 /* ili9488_draw_filled_rectangle(0, 50, ILI9488_LCD_WIDTH-1, 10);*/
-      font_draw_text(&calibri_36, buf, 50, 50, 1);
+      font_draw_text(&calibri_36, buf, 30, 50, 1);
 	  
 	  sprintf(buf, "%.3f m",atualizaDist(totalPulses));
 	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
-	  font_draw_text(&calibri_36, buf, 50, 120, 1);
+	  font_draw_text(&calibri_36, buf, 30, 120, 1);
 	  
 	  sprintf(buf, "%.3f km/h",vmax);
 	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
-	  font_draw_text(&calibri_36, buf, 50, 280, 1);
+	  font_draw_text(&calibri_36, buf, 30, 280, 1);
  
       RTT_init(pllPreScale, irqRTTvalue);         
 	  
@@ -394,7 +394,7 @@ int main(void) {
 				
 			rtc_get_time(RTC,&hour,&minute,&second );
 			sprintf(buf, "%d:%d:%d h:m:s",hour,minute,second);
-			font_draw_text(&calibri_36, buf, 50, 200, 1);
+			font_draw_text(&calibri_36, buf, 30, 200, 1);
 			tc_alarm = false;
 		
 		
