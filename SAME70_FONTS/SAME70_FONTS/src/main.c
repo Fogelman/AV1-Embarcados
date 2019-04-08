@@ -20,10 +20,20 @@ struct ili9488_opt_t g_ili9488_display_opt;
 // RTT 
 volatile Bool f_rtt_alarme = false;
 volatile Bool tc_alarm = false;
+volatile Bool status_measure = true;
+
 volatile unsigned int totalPulses = 0;
 volatile unsigned int previousPulses = 0;
+
 volatile float totalDist = 0;
 
+volatile int times_refresh = 0;
+
+
+volatile uint32_t hour;
+volatile uint32_t minute;
+volatile uint32_t second;
+volatile bool idle = false;
 
 #define LED_PIO       PIOC
 #define LED_PIO_ID    ID_PIOC
@@ -35,6 +45,12 @@ volatile float totalDist = 0;
 #define BUT_PIO				  PIOA
 #define BUT_PIN				  11
 #define BUT_PIN_MASK		  (1 << BUT_PIN)
+
+
+#define BUT_PIO_ID1			  ID_PIOD
+#define BUT_PIO1			  PIOD
+#define BUT_PIN1				  28
+#define BUT_PIN_MASK1			  (1 << BUT_PIN1)
 
 //RTC
 
@@ -50,6 +66,14 @@ volatile float totalDist = 0;
 
 #define TC_CH TC0
 #define TC_ID ID_TC1
+
+void font_draw_text(tFont *font, const char *text, int x, int y, int spacing);
+
+void idle_screen(bool a){
+
+	
+}
+
 
 void RTC_Handler(void)
 {
@@ -105,7 +129,28 @@ void RTC_init(){
 
 static void Button0_Handler(uint32_t id, uint32_t mask)
 {
+	if(status_measure){
 	totalPulses = totalPulses + 1;
+	
+	}
+	idle_screen(false);
+	times_refresh = 0;
+}
+
+static void Button1_Handler(uint32_t id, uint32_t mask)
+{
+	if(status_measure){
+		status_measure = false;
+		rtc_get_time(RTC,&hour,&minute,&second );
+		
+		
+	}
+	else{
+		status_measure = true;
+		rtc_set_time(RTC, hour, minute, second);
+	}
+	idle_screen(false);
+	times_refresh = 0;
 }
 
 
@@ -129,10 +174,18 @@ void RTT_Handler(void)
 
 
 void BUT_init(void){
+	pmc_enable_periph_clk(BUT_PIO_ID1);
+	pio_set_input(BUT_PIO1, BUT_PIN_MASK1, PIO_PULLUP | PIO_DEBOUNCE);
+	pio_enable_interrupt(BUT_PIO1, BUT_PIN_MASK1);
+	pio_handler_set(BUT_PIO1, BUT_PIO_ID1, BUT_PIN_MASK1, PIO_IT_FALL_EDGE, Button0_Handler);
+	NVIC_EnableIRQ(BUT_PIO_ID1);
+	NVIC_SetPriority(BUT_PIO_ID1, 4);
+	
+	
 	pmc_enable_periph_clk(BUT_PIO_ID);
 	pio_set_input(BUT_PIO, BUT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 	pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
-	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button0_Handler);
+	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button1_Handler);
 	NVIC_EnableIRQ(BUT_PIO_ID);
 	NVIC_SetPriority(BUT_PIO_ID, 4);
 	
@@ -251,6 +304,7 @@ float calculaVel(int pulses){
 	return vel;
 }
 
+
 int main(void) {
 	board_init();
 	sysclk_init();	
@@ -263,45 +317,94 @@ int main(void) {
 	f_rtt_alarme = true;
 	uint16_t pllPreScale = (int) (((float) 32768) / 2.0);
 	uint32_t irqRTTvalue  = 8;
+	
+	
+	
+	uint32_t irqRTTvalue_20  = 40;
+	float prev_vel = 0;
+	float vmax = 0;
+	float vel = 0;
 	 
 	//font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
 	//font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
 	font_draw_text(&calibri_36, "Speed", 20, 10, 1);
 	font_draw_text(&calibri_36, "Total Distance", 20, 80, 1);
 	font_draw_text(&calibri_36, "Total Time", 20, 160, 1);
+	font_draw_text(&calibri_36, "Max Speed", 20, 240, 1);
 	//font_draw_text(&arial_72, "102456", 50, 200, 2);
+	status_measure = true;
 	tc_alarm = false;
 	totalDist = 0;
 	totalPulses = 0;
+	idle = false;
 	while(1) {
-		
+	
+	
+	
 	if (f_rtt_alarme){
 		
-	  sprintf(buf, "%.3f km/h",calculaVel(totalPulses));
+		
+		prev_vel = vel;
+		vel =calculaVel(totalPulses);
+		
+		if(vel>vmax){
+		vmax = vel;	
+		}
+		if(prev_vel>vel){
+			 sprintf(buf, "%.3f km/h dim",vel);
+		}
+		else if (prev_vel<vel){
+			sprintf(buf, "%.3f km/h aum",vel);
+		}
+		else{
+			sprintf(buf, "%.3f km/h    ",vel);
+		}
 	 /* ili9488_draw_filled_rectangle(0, 50, ILI9488_LCD_WIDTH-1, 10);*/
       font_draw_text(&calibri_36, buf, 50, 50, 1);
 	  
 	  sprintf(buf, "%.3f m",atualizaDist(totalPulses));
 	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
 	  font_draw_text(&calibri_36, buf, 50, 120, 1);
+	  
+	  sprintf(buf, "%.3f km/h",vmax);
+	  /*ili9488_draw_filled_rectangle(0, 120, ILI9488_LCD_WIDTH-1, 0);*/
+	  font_draw_text(&calibri_36, buf, 50, 280, 1);
  
       RTT_init(pllPreScale, irqRTTvalue);         
 	  
       f_rtt_alarme = false;
+	  uint16_t us_value = 0 ;
+	  ili9488_write_brightness(us_value);
 	  
 	totalPulses = 0;
-	  
+	
+
+
     }
-	if(tc_alarm){
-		uint32_t hour;
-		uint32_t minute;
-		uint32_t second;
-		rtc_get_time(RTC,&hour,&minute,&second );
-		 sprintf(buf, "%d:%d:%d",hour,minute,second);
-		font_draw_text(&calibri_36, buf, 50, 200, 1);
-		tc_alarm = false;
+	if(tc_alarm && status_measure){
+		
+			if(vel-prev_vel<0.001){
+				times_refresh = times_refresh +1;
+			}
+			
+			if(times_refresh>20){
+				idle_screen(true);
+			}
+			
+				
+			rtc_get_time(RTC,&hour,&minute,&second );
+			sprintf(buf, "%d:%d:%d h:m:s",hour,minute,second);
+			font_draw_text(&calibri_36, buf, 50, 200, 1);
+			tc_alarm = false;
+		
+		
+		
 	}
 	
+
+
+
+
 	pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 		
 	}
